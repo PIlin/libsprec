@@ -47,22 +47,22 @@ static FLAC__int32 pcm[BUFFSIZE * 2];
 
 /****************************************************************************/
 
-typedef struct flac_encoder_t
+typedef struct sprec_flac_encoder_t
 {
 	FLAC__StreamEncoder* encoder;
 
-	flac_stream_write_callback_t write_callback;
-	flac_stream_seek_callback_t seek_callback;
-	flac_stream_tell_callback_t tell_callback;
+	sprec_flac_stream_write_callback_t write_callback;
+	sprec_flac_stream_seek_callback_t seek_callback;
+	sprec_flac_stream_tell_callback_t tell_callback;
 	void* callbacks_user_data;
-} flac_encoder_t;
+} sprec_flac_encoder_t;
 
 
-flac_encoder_t* create_encoder(uint32_t sample_rate, 
+sprec_flac_encoder_t* sprec_flac_create_encoder(uint32_t sample_rate, 
 	uint32_t channels, 
 	uint32_t bits_per_sample)
 {
-	flac_encoder_t *encoder = (flac_encoder_t*)calloc(1, sizeof(flac_encoder_t));
+	sprec_flac_encoder_t *encoder = (sprec_flac_encoder_t*)calloc(1, sizeof(sprec_flac_encoder_t));
 
 	if (!encoder)
 		return NULL;
@@ -83,20 +83,20 @@ flac_encoder_t* create_encoder(uint32_t sample_rate,
 	return encoder;
 }
 
-int feed_encoder(flac_encoder_t* encoder, 
+int sprec_flac_feed_encoder(sprec_flac_encoder_t* encoder, 
 	const int32_t buffer[], uint32_t samples)
 {
 	return FLAC__stream_encoder_process_interleaved(encoder->encoder, buffer, samples);
 }
 
-int finish_encoder(flac_encoder_t* encoder)
+int sprec_flac_finish_encoder(sprec_flac_encoder_t* encoder)
 {
 	if (!encoder)
 		return 1;
 	return FLAC__stream_encoder_finish(encoder->encoder);
 }
 
-void destroy_encoder(flac_encoder_t* encoder)
+void sprec_flac_destroy_encoder(sprec_flac_encoder_t* encoder)
 {
 	if (encoder)
 	{
@@ -116,7 +116,7 @@ FLAC__StreamEncoderWriteStatus internal_stream_write_callback(
 	unsigned current_frame, 
 	void *client_data) 
 {
-	flac_encoder_t* en = (flac_encoder_t*)client_data;
+	sprec_flac_encoder_t* en = (sprec_flac_encoder_t*)client_data;
 
 	int res = (*en->write_callback)(en, buffer, bytes, samples, current_frame, 
 		en->callbacks_user_data);
@@ -132,7 +132,7 @@ FLAC__StreamEncoderSeekStatus internal_stream_seek_callback(
 	FLAC__uint64 absolute_byte_offset, 
 	void *client_data)
 {
-	flac_encoder_t* en = (flac_encoder_t*)client_data;
+	sprec_flac_encoder_t* en = (sprec_flac_encoder_t*)client_data;
 
 	int res = (*en->seek_callback)(en, absolute_byte_offset, 
 		en->callbacks_user_data);
@@ -149,7 +149,7 @@ FLAC__StreamEncoderTellStatus internal_stream_tell_callback(
 	FLAC__uint64 *absolute_byte_offset, 
 	void *client_data)
 {
-	flac_encoder_t* en = (flac_encoder_t*)client_data;
+	sprec_flac_encoder_t* en = (sprec_flac_encoder_t*)client_data;
 
 	int res = (*en->tell_callback)(en, absolute_byte_offset, 
 		en->callbacks_user_data);
@@ -160,10 +160,10 @@ FLAC__StreamEncoderTellStatus internal_stream_tell_callback(
 		return FLAC__STREAM_ENCODER_TELL_STATUS_OK;
 }
 
-int bind_encoder_to_stream(flac_encoder_t* encoder,
-	flac_stream_write_callback_t write_callback,
-	flac_stream_seek_callback_t seek_callback,
-	flac_stream_tell_callback_t tell_callback,
+int sprec_flac_bind_encoder_to_stream(sprec_flac_encoder_t* encoder,
+	sprec_flac_stream_write_callback_t write_callback,
+	sprec_flac_stream_seek_callback_t seek_callback,
+	sprec_flac_stream_tell_callback_t tell_callback,
 	void* user_data)
 {
 	if (!encoder || !write_callback)
@@ -196,7 +196,7 @@ int bind_encoder_to_stream(flac_encoder_t* encoder,
 
 int sprec_flac_encode(const char *wavfile, const char *flacfile)
 {
-	flac_encoder_t* ienc;
+	sprec_flac_encoder_t* ienc;
 	FILE *infile;
 	char *data_location;
 	uint32_t sample_rate;
@@ -276,7 +276,7 @@ int sprec_flac_encode(const char *wavfile, const char *flacfile)
 	 * Create and initialize the FLAC encoder
 	 */
 
-	ienc = create_encoder(sample_rate, channels, bits_per_sample);
+	ienc = sprec_flac_create_encoder(sample_rate, channels, bits_per_sample);
 	
 	if (!ienc)
 	{
@@ -324,12 +324,12 @@ int sprec_flac_encode(const char *wavfile, const char *flacfile)
 			}
 		}
 		
-		FLAC__bool succ = feed_encoder(ienc, pcm, need);
+		FLAC__bool succ = sprec_flac_feed_encoder(ienc, pcm, need);
 		if (!succ)
 		{
 			fclose(infile);
 			free(hdr);
-			destroy_encoder(ienc);
+			sprec_flac_destroy_encoder(ienc);
 			return -1;
 		}
 
@@ -339,12 +339,12 @@ int sprec_flac_encode(const char *wavfile, const char *flacfile)
 	/**
 	 * Write out/finalize the file
 	 */
-	finish_encoder(ienc);
+	sprec_flac_finish_encoder(ienc);
 
 	/**
 	 * Clean up
 	 */
-	destroy_encoder(ienc);
+	sprec_flac_destroy_encoder(ienc);
 	fclose(infile);
 	free(hdr);
 	
