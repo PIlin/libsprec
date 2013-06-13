@@ -31,7 +31,7 @@ struct sprec_server_response {
  * Should be freed with sprec_free_response().
  * Returns NULL on error.
  */
-struct sprec_server_response *sprec_send_audio_data(void *data, int length, const char *language, uint32_t sample_rate);
+struct sprec_server_response *sprec_send_audio_data(const void *data, int length, const char *language, uint32_t sample_rate);
 
 void sprec_free_response(struct sprec_server_response *resp);
 

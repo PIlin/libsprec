@@ -24,6 +24,16 @@ typedef void (*sprec_callback)(struct sprec_result *, void *);
 
 /**
  * Performs a synchronous text recognition session in the given language,
+ * from specified flac audio data,
+ * then returns the recognized text and the recognition confidence.
+ * The return value must be freed using sprec_result_free().
+ * Returns NULL on error.
+ */
+struct sprec_result *sprec_recognize_audio_sync(const void* audio_data, size_t audio_bytes_length, uint32_t audio_sample_rate,
+	const char* lang);
+
+/**
+ * Performs a synchronous text recognition session in the given language,
  * listening for the duration specified by `dur_s' (in seconds),
  * then returns the recognized text and the recognition confidence.
  * The return value must be freed using sprec_result_free().

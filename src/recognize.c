@@ -24,16 +24,51 @@ struct sprec_recattr_internal {
 
 void *sprec_pthread_fn(void *ctx);
 
+
+struct sprec_result *sprec_recognize_audio_sync(const void* audio_data, size_t audio_bytes_length, uint32_t audio_sample_rate,
+	const char* lang)
+{
+	/**
+	 * Send it to Google
+	 */
+	struct sprec_server_response * resp = sprec_send_audio_data(audio_data, audio_bytes_length, lang, audio_sample_rate);
+	if (resp == NULL)
+	{
+		return NULL;
+	}
+
+	/**
+	 * Get the JSON from the response object,
+	 * then parse it to get the actual text and confidence
+	 */
+	char* text = sprec_get_text_from_json(resp->data);
+	double confidence = sprec_get_confidence_from_json(resp->data);
+	sprec_free_response(resp);
+
+	/**
+	 * Compose the return value
+	 */
+	struct sprec_result * res;
+	res = malloc(sizeof(*res));
+	if (res == NULL)
+	{
+		free(text);
+		return NULL;
+	}
+
+	res->text = text;
+	res->confidence = confidence;
+	return res;
+}
+
 struct sprec_result *sprec_recognize_sync(const char *lang, float dur_s)
 {
 	struct sprec_wav_header *hdr;
-	struct sprec_server_response *resp;
 	struct sprec_result *res;
 	int err, len;
-	char *text, *tmpstub, *buf;
+	char *tmpstub, *buf;
 	char wavfile[L_tmpnam + 5];
 	char flacfile[L_tmpnam + 6];
-	double confidence;
 	
 	tmpstub = tmpnam(NULL);
 	sprintf(wavfile, "%s.wav", tmpstub);
@@ -76,26 +111,10 @@ struct sprec_result *sprec_recognize_sync(const char *lang, float dur_s)
 		return NULL;
 	}
 
-	/**
-	 * ...and send it to Google
-	 */
-	resp = sprec_send_audio_data(buf, len, lang, hdr->sample_rate);
+	res = sprec_recognize_audio_sync(buf, len, hdr->sample_rate, lang);
+
 	free(buf);
 	free(hdr);
-	if (resp == NULL)
-	{
-		return NULL;
-	}
-
-
-	/**
-	 * Get the JSON from the response object,
-	 * then parse it to get the actual text and confidence
-	 */
-	text = sprec_get_text_from_json(resp->data);
-	confidence = sprec_get_confidence_from_json(resp->data);
-	sprec_free_response(resp);
-
 	/**
 	 * Remove the temporary files in order
 	 * not fill the /tmp folder with garbage
@@ -103,18 +122,6 @@ struct sprec_result *sprec_recognize_sync(const char *lang, float dur_s)
 	remove(wavfile);
 	remove(flacfile);
 
-	/**
-	 * Compose the return value
-	 */
-	res = malloc(sizeof(*res));
-	if (res == NULL)
-	{
-		free(text);
-		return NULL;
-	}
-	
-	res->text = text;
-	res->confidence = confidence;
 	return res;
 }
 

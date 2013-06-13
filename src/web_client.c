@@ -15,7 +15,7 @@
 
 static size_t http_callback(char *ptr, size_t count, size_t blocksize, void *userdata);
 
-struct sprec_server_response *sprec_send_audio_data(void *data, int length, const char *language, uint32_t sample_rate)
+struct sprec_server_response *sprec_send_audio_data(const void *data, int length, const char *language, uint32_t sample_rate)
 {
 	CURL *conn_hndl;
 	struct curl_httppost *form, *lastptr;
@@ -108,7 +108,7 @@ char *sprec_get_text_from_json(const char *json)
 	void *guesses_array;
 	void *guess;
 	void *str_obj;
-	char *str_tmp;
+	const char *str_tmp;
 	char *text;
 	
 	if (!json)
