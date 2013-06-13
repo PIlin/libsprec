@@ -6,6 +6,8 @@
  * on Sun 15/04/2012.
  */
 
+#include <assert.h>
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <FLAC/all.h>
@@ -80,6 +82,8 @@ sprec_flac_encoder_t* sprec_flac_create_encoder(uint32_t sample_rate,
 	FLAC__stream_encoder_set_bits_per_sample(encoder->encoder, bits_per_sample);
 	FLAC__stream_encoder_set_sample_rate(encoder->encoder, sample_rate);
 
+	FLAC__stream_encoder_set_compression_level(encoder->encoder, 5);
+
 	return encoder;
 }
 
@@ -118,7 +122,10 @@ FLAC__StreamEncoderWriteStatus internal_stream_write_callback(
 {
 	sprec_flac_encoder_t* en = (sprec_flac_encoder_t*)client_data;
 
-	int res = (*en->write_callback)(en, buffer, bytes, samples, current_frame, 
+	assert(en);
+	assert(en->write_callback);
+
+	int res = (en->write_callback)(en, buffer, bytes, samples, current_frame, 
 		en->callbacks_user_data);
 
 	if (res)
@@ -172,6 +179,11 @@ int sprec_flac_bind_encoder_to_stream(sprec_flac_encoder_t* encoder,
 	if (seek_callback && !tell_callback)
 		return 2;
 
+	encoder->write_callback = write_callback;
+	encoder->seek_callback = seek_callback;
+	encoder->tell_callback = tell_callback;
+	encoder->callbacks_user_data = user_data;
+
 	FLAC__StreamEncoderInitStatus status = FLAC__stream_encoder_init_stream(
 		encoder->encoder,
 		internal_stream_write_callback,
@@ -182,11 +194,6 @@ int sprec_flac_bind_encoder_to_stream(sprec_flac_encoder_t* encoder,
 
 	if (FLAC__STREAM_ENCODER_INIT_STATUS_OK != status)
 		return 3;
-
-	encoder->write_callback = write_callback;
-	encoder->seek_callback = seek_callback;
-	encoder->tell_callback = tell_callback;
-	encoder->callbacks_user_data = user_data;
 
 	return 0;
 }
