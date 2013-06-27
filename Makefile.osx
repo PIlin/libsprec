@@ -1,7 +1,7 @@
 TARGET = libsprec.dylib
 OBJECTS = src/wav.o src/flac_encoder.o src/web_client.o src/recognize.o
-CFLAGS = -I/opt/local/include -I../libjsonz -dynamiclib -c -Wall -Iinclude  -arch i386 -arch x86_64
-LDFLAGS = -L../libjsonz -L/opt/local/lib -w -dynamiclib -install_name "@loader_path/$(TARGET)" -framework CoreFoundation -framework AudioToolbox -lcurl -ljsonz -lFLAC  -arch i386 -arch x86_64
+CFLAGS = -I/opt/local/include -I../libjsonz -dynamiclib -c -Wall -Iinclude 
+LDFLAGS = -L../libjsonz -L/opt/local/lib -w -dynamiclib -install_name "@loader_path/$(TARGET)" -framework CoreFoundation -framework AudioToolbox -lcurl -ljsonz -lFLAC 
 CC = gcc
 LD = $(CC)
 
